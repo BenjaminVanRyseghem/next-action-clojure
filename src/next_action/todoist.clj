@@ -12,13 +12,12 @@
   (let [options
         (codec/form-encode
          {:api_token (info/api-token)
-          :seq_no seq-no})
+          :seq_no @seq-no})
         url (str todoist-url "?" options)
         json (get (client/get url) :body)
         body (json/read-str json :key-fn keyword)]
 
     ;; updates seq-no
-    (println url)
     (reset! seq-no (:seq_no body))
     json
     ))
