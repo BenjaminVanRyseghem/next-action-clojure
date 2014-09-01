@@ -6,6 +6,7 @@
   :dependencies [[clj-http "1.0.0"]
                  [org.clojure/clojure "1.5.1"]
                  [org.clojure/data.json "0.2.5"]
+                 [org.clojure/tools.trace "0.7.5"]
                  [ring/ring-codec "1.0.0"]]
   :main ^:skip-aot next-action.core
   :target-path "target/%s"

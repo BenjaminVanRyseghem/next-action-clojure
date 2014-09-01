@@ -1,8 +1,6 @@
 (ns next-action.core
-  (:require
-   [next-action.info :as info]
-   [next-action.sync :as sync]
-   )
+  (:require [next-action.info :as info]
+            [next-action.sync :as sync])
   (:gen-class))
 
 ;; Run every minute
@@ -20,7 +18,6 @@
   []
   (do
     (println "Just another loop")
-    (println (info/api-token))
     (sync/update)
     (Thread/sleep sleeping-time)))
 
