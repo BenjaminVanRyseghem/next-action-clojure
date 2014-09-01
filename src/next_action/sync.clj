@@ -6,5 +6,5 @@
 (defn update
   "Updates the in memory data then chase the @next-action"
   []
-  (println (todoist/sync-todoist))
+  (println (todoist/get-projects))
   )
