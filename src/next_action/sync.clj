@@ -2,15 +2,22 @@
   (:require [next-action.nextaction :as next-action]
             [next-action.todoist :as todoist]))
 
-(def todoist-tree)
-
 (defn update
   "Updates the in memory data then chase the @next-action"
   []
   (let [result (todoist/get-projects)
         projects (:projects result)
-        patch (:patch result)
-        new-patches (next-action/collect-patches projects)]
-    (println "Avant -> " (count patch))
-    (println "Apres -> " (count @new-patches))
-    (println "Final -> " (dec (count (conj @new-patches patch))))))
+        patch (:patch result)]
+    (if (nil? patch)
+      (let [patches (next-action/collect-patches projects)]
+
+        (println (count patches) " updates")
+        (doall
+         (for [p patches]
+           (println "\t" (:type p) "\t" (get-in p [:args :name]))))
+        (todoist/send-patches patches)
+        (println "\tTask(s) updated sucessfully" ))
+      (do
+        (println "\tCreation of the new label")
+        (todoist/send-patches (list patch))
+        (println "\tLabel craeted successfully")))))

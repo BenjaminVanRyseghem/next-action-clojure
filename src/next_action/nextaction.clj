@@ -13,38 +13,46 @@
   (let [ignored (is-ignored project)
         valid-parent (or (nil? @(:parent project)) (not (is-ignored @(:parent project))))
         is-parallel (parallel-project? project)]
-
-;;     (println (:name project)
-;;              "->\n\t\tignored:" ignored
-;;              "\n\t\tvalid-parent:" valid-parent
-;;              "\n\t\tparent:" @(:parent project)
-;;              "\n\t\tis-parallel" is-parallel)
     (and (not ignored) (not is-parallel) valid-parent)))
+
+(defn- add-label-patch [task]
+  {:type "item_update"
+   :timestamp (quot (System/currentTimeMillis) 1000)
+   :args {:id (:id task)
+          :name (:content task)
+          :labels (conj (:labels task) (todoist/get-next-action-id))}})
+
+(defn- remove-label-patch [task]
+  {:type "item_update"
+   :timestamp (quot (System/currentTimeMillis) 1000)
+   :args {:id (:id task)
+          :name (:content task)
+          :labels (remove #(= (todoist/get-next-action-id) %1) (:labels task))}})
+
+(defn- contains-next-action-label? [task]
+  (not (nil? (some #{(todoist/get-next-action-id)} (:labels task)))))
 
 (defn- attach-sequential-patches [patches project]
   (let [first-task (first @(:tasks project))]
-    (if-not (or (nil? first-task) (contains? (:labels first-task) (todoist/get-next-action-id)))
-      (swap! patches conj {
-                           :type "item_update"
-                           :name (:content first-task)
-                           :timestamp (quot (System/currentTimeMillis) 1000)
-                           :args {
-                                  :id (:id first-task)
-                                  :labels (conj (:labels first-task) (todoist/get-next-action-id))
-                                  }}))))
+;;      (println (:content first-task)"'s LABELS:" (:labels first-task) (todoist/get-next-action-id) (contains-next-action-label? first-task))
+    (if-not (or (nil? first-task) (contains-next-action-label? first-task))
+      (swap! patches conj (add-label-patch first-task))))
+  (doall
+   (for [task (rest @(:tasks project))]
+     (if (contains? (:labels task) (todoist/get-next-action-id))
+       (swap! patches conj (remove-label-patch task))))))
 
 (defn- attach-parallel-patches [patches project]
-  (let [mapping (fn [task] {
-                            :type "item_update"
-                            :name (:content task)
-                            :timestamp (quot (System/currentTimeMillis) 1000)
-                            :args {
-                                   :id (:id task)
-                                   :labels (conj (:labels task) (todoist/get-next-action-id))
-                                   }})]
+  (let [mapping (fn [task] (add-label-patch task))]
     (doall
      (for [task @(:tasks project)]
-         (swap! patches conj (mapping task))))))
+       (if-not (contains-next-action-label? task)
+         (swap! patches conj (mapping task)))))))
+
+(defn- attach-ignored-patches [patches project]
+  (for [task @(:tasks project)]
+     (if (contains? (:labels task) (todoist/get-next-action-id))
+       (swap! patches conj (remove-label-patch task)))))
 
 (defn collect-patches [projects]
   (let [patches (atom [])]
@@ -52,5 +60,6 @@
      (for [project projects]
        (cond
         (sequential-project? project) (attach-sequential-patches patches project)
-        (parallel-project? project) (attach-parallel-patches patches project))))
-    patches))
+        (parallel-project? project) (attach-parallel-patches patches project)
+        (is-ignored project) (attach-ignored-patches patches project))))
+    @patches))

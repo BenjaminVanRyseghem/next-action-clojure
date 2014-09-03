@@ -17,8 +17,9 @@
   "Loop body. Wait for `sleeping-time` then update data"
   []
   (do
-    (println "Just another loop")
+    (println "\n=========== New Iteration ===========\n")
     (sync/update)
+    (println "Now sleeping for " (quot sleeping-time 1000) "s" )
     (Thread/sleep sleeping-time)))
 
 (defn -main

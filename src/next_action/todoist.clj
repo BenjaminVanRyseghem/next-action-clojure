@@ -4,17 +4,22 @@
             [clojure.data.json :as json]
             [ring.util.codec :as codec]))
 
-(def todoist-url "https://todoist.com/TodoistSync/v5.3/get")
+(def get-todoist-url "https://todoist.com/TodoistSync/v5.3/get")
+(def sync-todoist-url "https://todoist.com/TodoistSync/v5.3/sync")
+
 (def seq-no (atom 0))
 (def next-action-id (atom nil))
 
+(defn- generate-temp-id []
+  (str (java.util.UUID/randomUUID))
+)
+
 (defn- get-todoist []
-  (let [options
-        (codec/form-encode
-         {:api_token (info/api-token)
-          ;; todo: should use @seq-no, and update in memory data
-          :seq_no 0})
-        url (str todoist-url "?" options)
+  (let [options (codec/form-encode
+                 {:api_token (info/api-token)
+                  ;; todo: should use @seq-no, and update in memory data
+                  :seq_no 0})
+        url (str get-todoist-url "?" options)
         json (get (client/get url) :body)
         body (json/read-str json :key-fn keyword)]
     (reset! seq-no (:seq_no body))
@@ -56,11 +61,11 @@
      (let [project (get projects (:project_id task))]
        (swap! (:tasks project) conj task)))))
 
-(defn- retrieve-next-action-id [data]
+(defn- retrieve-next-action [data]
   (let [labels (:Labels data)
         label (first (filter #(= (:name %1) (info/next-action-label)) labels))]
     (if (nil? label)
-      (let [uuid (str (java.util.UUID/randomUUID))]
+      (let [uuid (generate-temp-id)]
         (reset! next-action-id uuid)
         {
          :type "label_register"
@@ -68,13 +73,25 @@
          :temp_id uuid
          :args {
                 :name (info/next-action-label)
-                :color 5
+                :color 2 ;; red
                 }})
       (do
         (reset! next-action-id (:id label))
-        {}))))
+        nil))))
 
-(defn get-next-action-id [] @next-action-id)
+;; No need to sort the tasks by priority or due date since:
+;; - in sequential projects, you still have to do them in the correct order
+;; - in parallell projects, all the tasks are flagged as **next-action**
+(defn- sort-tasks [tasks]
+  (reset! tasks
+          (sort-by :item_order @tasks)))
+
+
+(defn get-next-action-id
+  "Returns the id for the **next-action** label.
+  Note that it can be a temporary id."
+  []
+  @next-action-id)
 
 (defn get-projects
   "Retrieve all the projects from Todoist, then build the projects hierarchy
@@ -83,10 +100,23 @@
   (let [data (get-todoist)
         projects (:Projects data)
         result (build-projects-tree projects)
-        patch (retrieve-next-action-id data)]
+        patch (retrieve-next-action data)]
     (attach-tasks (:Items data) result)
     (doall
      (for [project (vals result)]
-       (reset! (:tasks project)
-               (sort-by :item_order @(:tasks project)))))
+       (sort-tasks (:tasks project))))
     {:projects (vals result) :patch patch}))
+
+
+(defn send-patches
+  "Send the patches to Todoist to update data"
+  [patches]
+  (let [options (codec/form-encode
+                 {:api_token (info/api-token)
+                  :items_to_sync (json/write-str patches)})
+        url (str sync-todoist-url "?" options)
+;;         body (json/read-str json :key-fn keyword)
+        ]
+    (client/get url)
+    "Task flagged successfully"
+    ))
