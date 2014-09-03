@@ -32,34 +32,79 @@
 (defn- contains-next-action-label? [task]
   (not (nil? (some #{(todoist/get-next-action-id)} (:labels task)))))
 
-(defn- attach-sequential-patches [patches project]
-  (let [first-task (first @(:tasks project))]
-;;      (println (:content first-task)"'s LABELS:" (:labels first-task) (todoist/get-next-action-id) (contains-next-action-label? first-task))
-    (if-not (or (nil? first-task) (contains-next-action-label? first-task))
-      (swap! patches conj (add-label-patch first-task))))
+;;
+;; Sequential
+;;
+
+(declare attach-sequential-patches!)
+
+(defn- add-new-patch! [patches patch]
+  (swap! patches conj patch))
+
+(defn- remove-patches-for-sequential-task! [patches task]
+  (if (contains-next-action-label? task)
+    (add-new-patch! patches (remove-label-patch task)))
   (doall
-   (for [task (rest @(:tasks project))]
-     (if (contains? (:labels task) (todoist/get-next-action-id))
-       (swap! patches conj (remove-label-patch task))))))
+   (for [child @(:children task)]
+     (remove-patches-for-sequential-task! patches task))))
 
-(defn- attach-parallel-patches [patches project]
-  (let [mapping (fn [task] (add-label-patch task))]
+(defn- add-patches-for-sequential-task! [patches task]
+  (if (empty? @(:children task))
+    (if-not (contains-next-action-label? task)
+      (add-new-patch! patches (add-label-patch task)))
+    (do
+      (if (contains-next-action-label? task)
+        (add-new-patch! patches (remove-label-patch task)))
+      (attach-sequential-patches! patches @(:children task)))))
+
+(defn- attach-sequential-patches! [patches coll]
+  (if-not (empty? coll)
+    (let [first-task (first coll)]
+      (if-not (nil? first-task)
+        (add-patches-for-sequential-task! patches first-task)))
     (doall
-     (for [task @(:tasks project)]
+     (for [task (rest coll)]
+       (remove-patches-for-sequential-task! patches task)))))
+
+;;
+;; Parallel
+;;
+
+(defn- attach-parallel-patches! [patches coll]
+  (doall
+   (for [task coll]
+     (if (empty? @(:children task))
        (if-not (contains-next-action-label? task)
-         (swap! patches conj (mapping task)))))))
+         (add-new-patch! patches (add-label-patch task)))
+       (do
+         (if (contains-next-action-label? task)
+           (add-new-patch! patches (remove-label-patch task)))
+         (attach-parallel-patches! patches @(:children task)))))))
 
-(defn- attach-ignored-patches [patches project]
-  (for [task @(:tasks project)]
-     (if (contains? (:labels task) (todoist/get-next-action-id))
-       (swap! patches conj (remove-label-patch task)))))
+;;
+;; Ignored
+;;
 
-(defn collect-patches [projects]
+(defn- attach-ignored-patches! [patches coll]
+  (for [task @(:tasks coll)]
+    (do
+      (if (contains? (:labels task) (todoist/get-next-action-id))
+        (add-new-patch! patches (remove-label-patch task)))
+      (attach-ignored-patches! patches @(:children task)))))
+
+;;
+;; Core
+;;
+
+(defn collect-patches
+  "Iterates over all the projects and items to collect the patches"
+  [projects]
   (let [patches (atom [])]
     (doall
      (for [project projects]
-       (cond
-        (sequential-project? project) (attach-sequential-patches patches project)
-        (parallel-project? project) (attach-parallel-patches patches project)
-        (is-ignored project) (attach-ignored-patches patches project))))
+       (do
+         (cond
+          (sequential-project? project) (attach-sequential-patches! patches (filter #(= 1 (:indent %1)) @(:tasks project)))
+          (parallel-project? project) (attach-parallel-patches! patches @(:tasks project))
+          (is-ignored project) (attach-ignored-patches! patches project)))))
     @patches))

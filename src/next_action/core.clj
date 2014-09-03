@@ -19,7 +19,7 @@
   (do
     (println "\n=========== New Iteration ===========\n")
     (sync/update)
-    (println "Now sleeping for " (quot sleeping-time 1000) "s" )
+    (println "Now sleeping for" (quot sleeping-time 1000) "seconds" )
     (Thread/sleep sleeping-time)))
 
 (defn -main

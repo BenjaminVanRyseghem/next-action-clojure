@@ -12,7 +12,7 @@
 
 (defn- generate-temp-id []
   (str (java.util.UUID/randomUUID))
-)
+  )
 
 (defn- get-todoist []
   (let [options (codec/form-encode
@@ -22,23 +22,67 @@
         url (str get-todoist-url "?" options)
         json (get (client/get url) :body)
         body (json/read-str json :key-fn keyword)]
-    (reset! seq-no (:seq_no body))
+    ;;     (reset! seq-no (:seq_no body))
     body))
 
-(defn- sibling-case [project parent]
-  (reset! (:parent project) @parent))
+;;
+;; Tasks tree building
+;;
 
-(defn- children-case [project parent last-project indent]
-  (reset! parent @last-project)
-  (sibling-case project parent)
+(defn- sibling-task! [task parent]
+  (reset! (:parent task) @parent)
+  (if-not (nil? @parent)
+    (swap! (:children @parent) conj task )))
+
+(defn- children-task! [task parent last-task indent]
+  (reset! parent @last-task)
+  (sibling-task! task parent)
   (swap! indent inc))
 
-(defn- parent-case [project parent indent]
+(defn- parent-task! [task parent indent]
   (reset! parent @(:parent @parent))
-  (sibling-case project parent)
+  (sibling-task! task parent)
   (swap! indent dec))
 
-(defn- build-projects-tree [projects]
+(defn- build-tasks-tree! [tasks]
+  (let [sorted (map #(assoc %1 :parent (atom nil) :children (atom [])) (filter #(and (zero? (:is_archived %1)) (zero? (:is_deleted %1)) (zero? (:checked %1))) (sort-by :item_order tasks)))
+        parent (atom nil)
+        last-task (atom nil)
+        indent (atom 1)]
+    (doall
+     (for [task sorted]
+       (do
+         (cond
+          (= @indent (:indent task)) (sibling-task! task parent)
+          (= (inc @indent) (:indent task)) (children-task! task parent last-task indent)
+          (< (:indent task) @indent) (parent-task! task parent indent))
+         (reset! last-task task))))
+    sorted))
+
+;; No need to sort the tasks by priority or due date since:
+;; - in sequential projects, you still have to do them in the correct order
+;; - in parallell projects, all the tasks are flagged as **next-action**
+(defn- sort-tasks! [tasks]
+  (reset! tasks (build-tasks-tree! @tasks)))
+
+;;
+;; Project tree building
+;;
+
+(defn- sibling-project! [project parent]
+  (reset! (:parent project) @parent))
+
+(defn- children-project! [project parent last-project indent]
+  (reset! parent @last-project)
+  (sibling-project! project parent)
+  (swap! indent inc))
+
+(defn- parent-project! [project parent indent]
+  (reset! parent @(:parent @parent))
+  (sibling-project! project parent)
+  (swap! indent dec))
+
+(defn- build-projects-tree! [projects]
   (let [sorted (map #(assoc %1 :parent (atom nil) :tasks (atom [])) (sort-by :item_order projects))
         parent (atom nil)
         result (atom {})
@@ -48,12 +92,16 @@
      (for [project (rest sorted)]
        (do
          (cond
-          (= @indent (:indent project)) (sibling-case project parent)
-          (= (inc @indent) (:indent project)) (children-case project parent last-project indent)
-          (< (:indent project) @indent) (parent-case project parent indent))
+          (= @indent (:indent project)) (sibling-project! project parent)
+          (= (inc @indent) (:indent project)) (children-project! project parent last-project indent)
+          (< (:indent project) @indent) (parent-project! project parent indent))
          (reset! last-project project)
          (swap! result assoc (:id project) project))))
     @result))
+
+;;
+;;
+;;
 
 (defn- attach-tasks [tasks projects]
   (doall
@@ -79,13 +127,10 @@
         (reset! next-action-id (:id label))
         nil))))
 
-;; No need to sort the tasks by priority or due date since:
-;; - in sequential projects, you still have to do them in the correct order
-;; - in parallell projects, all the tasks are flagged as **next-action**
-(defn- sort-tasks [tasks]
-  (reset! tasks
-          (sort-by :item_order @tasks)))
 
+;;
+;; CORE
+;;
 
 (defn get-next-action-id
   "Returns the id for the **next-action** label.
@@ -99,12 +144,12 @@
   []
   (let [data (get-todoist)
         projects (:Projects data)
-        result (build-projects-tree projects)
+        result (build-projects-tree! projects)
         patch (retrieve-next-action data)]
     (attach-tasks (:Items data) result)
     (doall
      (for [project (vals result)]
-       (sort-tasks (:tasks project))))
+       (sort-tasks! (:tasks project))))
     {:projects (vals result) :patch patch}))
 
 
@@ -115,8 +160,6 @@
                  {:api_token (info/api-token)
                   :items_to_sync (json/write-str patches)})
         url (str sync-todoist-url "?" options)
-;;         body (json/read-str json :key-fn keyword)
         ]
     (client/get url)
-    "Task flagged successfully"
-    ))
+    "Task flagged successfully"))
