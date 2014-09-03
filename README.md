@@ -60,7 +60,7 @@ The `info.json` file is structured like this:
 
 ## Credits
 
-This project is inspired by [NextAction](https://github.com/akramer/NextAction).
+This project is inspired by [NextAction](https://github.com/akramer/NextAction) by Adam Kramer.
 
 ## License
 
