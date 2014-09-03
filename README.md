@@ -58,9 +58,9 @@ The `info.json` file is structured like this:
     	"parallel-postfix": "Postfix indicating a project should handle its tasks in parallel way"
     }
 
+## Credits
 
-    $ java -jar next-action-0.1.0-standalone.jar
-
+This project is inspired by [NextAction](https://github.com/akramer/NextAction).
 
 ## License
 
