@@ -1,3 +1,4 @@
+.nrepl-port
 info.json
 target/*
 !target/uberjar/*.jar

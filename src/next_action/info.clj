@@ -2,7 +2,7 @@
   (:require [clojure.data.json :as json]
             [clojure.java.io :as io]))
 
-(def read-info
+(def ^{:private true} read-info
   (memoize
    #(json/read-str
      (slurp (io/file (-> (java.io.File. "info.json") .getAbsolutePath)))

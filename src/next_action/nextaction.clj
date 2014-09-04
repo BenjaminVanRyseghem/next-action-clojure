@@ -2,18 +2,24 @@
   (:require [next-action.info :as info]
             [next-action.todoist :as todoist]))
 
-(defn- is-ignored [project]
+(defn- ignored? [project]
   (let [name (:name project)]
-    (or (.startsWith name (info/someday-label)) (.startsWith name (info/list-prefix)))))
+    (or
+     (.startsWith name (info/someday-label))
+     (.startsWith name (info/list-prefix))
+     (and
+      (not (nil? @(:parent project)))
+      (ignored? @(:parent project))))))
 
 (defn- parallel-project? [project]
   (.endsWith (:name project) (info/parallel-postfix)))
 
 (defn- sequential-project? [project]
-  (let [ignored (is-ignored project)
-        valid-parent (or (nil? @(:parent project)) (not (is-ignored @(:parent project))))
+  (let [ignored (ignored? project)
         is-parallel (parallel-project? project)]
-    (and (not ignored) (not is-parallel) valid-parent)))
+    (and
+     (not ignored)
+     (not is-parallel))))
 
 (defn- add-label-patch [task]
   {:type "item_update"
@@ -71,25 +77,26 @@
 ;;
 
 (defn- attach-parallel-patches! [patches coll]
-  (doall
-   (for [task coll]
-     (if (empty? @(:children task))
-       (if-not (contains-next-action-label? task)
-         (add-new-patch! patches (add-label-patch task)))
-       (do
-         (if (contains-next-action-label? task)
-           (add-new-patch! patches (remove-label-patch task)))
-         (attach-parallel-patches! patches @(:children task)))))))
+  (doseq [task coll]
+    (if (empty? @(:children task))
+      (if-not (contains-next-action-label? task)
+        (add-new-patch! patches (add-label-patch task)))
+      (do
+        (if (contains-next-action-label? task)
+          (add-new-patch! patches (remove-label-patch task)))
+        (attach-parallel-patches! patches @(:children task))))))
 
 ;;
 ;; Ignored
 ;;
 
 (defn- attach-ignored-patches! [patches coll]
-  (for [task @(:tasks coll)]
+  (doseq [task coll]
     (do
-      (if (contains? (:labels task) (todoist/get-next-action-id))
-        (add-new-patch! patches (remove-label-patch task)))
+      (if (contains-next-action-label? task)
+        (do
+          (println "Remove task")
+          (add-new-patch! patches (remove-label-patch task))))
       (attach-ignored-patches! patches @(:children task)))))
 
 ;;
@@ -100,11 +107,10 @@
   "Iterates over all the projects and items to collect the patches"
   [projects]
   (let [patches (atom [])]
-    (doall
-     (for [project projects]
-       (do
-         (cond
-          (sequential-project? project) (attach-sequential-patches! patches (filter #(= 1 (:indent %1)) @(:tasks project)))
-          (parallel-project? project) (attach-parallel-patches! patches @(:tasks project))
-          (is-ignored project) (attach-ignored-patches! patches project)))))
+    (doseq [project projects]
+      (do
+        (cond
+         (ignored? project) (attach-ignored-patches! patches @(:tasks project))
+         (sequential-project? project) (attach-sequential-patches! patches (filter #(= 1 (:indent %1)) @(:tasks project)))
+         (parallel-project? project) (attach-parallel-patches! patches @(:tasks project)))))
     @patches))
