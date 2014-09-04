@@ -13,10 +13,6 @@ A project can also be considered as a list of task if its name ends with *list-p
 
 Finally, the project named *someday-label* will be ignored as well, since it contains the list of non-active projects.
 
-## Installation
-
-Download from http://example.com/FIXME.
-
 ## Prerequisites
 
 You will need [Leiningen][1] 1.7.0 or above installed if you want to run the code in development mode.
@@ -27,15 +23,27 @@ You will also need [Todoist][2] as well as your Todoist API token (can be found 
 [1]: https://github.com/technomancy/leiningen
 [2]: https://todoist.com
 
+## Download
+
+Download the [jar file](https://github.com/BenjaminVanRyseghem/next-action-clojure/raw/master/target/next-action-1.0.0-standalone.jar) for a standalone application.
+
+Otherwise, just clone/fork this repository.
+
 ## Running
 
-To start a web server for the application, run:
+To start the jar file, run:
+
+    $ java -jar next-action-1.0.0-standalone.jar
+
+If you want to run the development code, clone this repository then run:
 
     lein run
 
+You also need to create a `info.json` file which must be in the directory where you run the Java command.
+
 ## Compiling
 
-To compile the application as a stand-alone deplaoyable server, run:
+To compile the application as a stand-alone application, run:
 
     lein uberjar
 
@@ -43,9 +51,7 @@ The generated jars can be found in `./target`
 
 You can then run it using:
 
-    $ java -jar next-action-0.1.0-standalone.jar
-
-Note that an `info.json` file is needed along the `jar` file.
+    $ java -jar next-action-1.0.0-standalone.jar
 
 ## info.json structure
 
