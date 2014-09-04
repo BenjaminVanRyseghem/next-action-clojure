@@ -11,12 +11,15 @@
     (if (nil? patch)
       (let [patches (next-action/collect-patches projects)]
 
-        (println (count patches) " update(s)")
+        (println (count patches) "update(s)")
         (doall
          (for [p patches]
            (println "\t" (:type p) "\t" (get-in p [:args :name]))))
-        (todoist/send-patches patches)
-        (println "\t Task(s) updated sucessfully" ))
+        (if (empty? patches)
+          (println "\t No update needed" )
+          (do
+            (todoist/send-patches patches)
+            (println "\t Task(s) updated sucessfully"))))
       (do
         (println "\tCreation of the new label")
         (todoist/send-patches (list patch))
