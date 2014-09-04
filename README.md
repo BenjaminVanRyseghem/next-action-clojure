@@ -15,18 +15,21 @@ Finally, the project named *someday-label* will be ignored as well, since it con
 ## Prerequisites
 
 You will need [Leiningen][1] 1.7.0 or above installed if you want to run the code in development mode.
-Otherwise, you only need a JRE to run the **jar** file.
+Otherwise, you only need a [JRE][3] to run the **jar** file.
 
 You will also need [Todoist][2] as well as your Todoist API token (can be found under Settings -> Account).
 
 [1]: https://github.com/technomancy/leiningen
 [2]: https://todoist.com
+[3]: http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html
 
 ## Download
 
-Download the [jar file](https://github.com/BenjaminVanRyseghem/next-action-clojure/raw/master/target/next-action-1.0.0-standalone.jar) for a standalone application.
+Download the [jar file][4] for a standalone application.
 
 Otherwise, just clone/fork this repository.
+
+[4]: https://github.com/BenjaminVanRyseghem/next-action-clojure/raw/master/target/next-action-1.0.0-standalone.jar
 
 ## Running
 
