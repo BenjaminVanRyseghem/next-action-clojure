@@ -1,5 +1,4 @@
-next-action-clojure
-===================
+# Next actions for Todoist
 
 A clojure application bringing [GTD](http://en.wikipedia.org/wiki/Getting_Things_Done) in Todoist.
 Adds the support for **next actions** as weel as **Someday** inbox.
