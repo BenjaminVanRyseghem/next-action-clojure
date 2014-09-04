@@ -1,1 +1,3 @@
 info.json
+target/*
+!target/*.jar
