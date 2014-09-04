@@ -36,7 +36,7 @@ To start the jar file, run:
 
 If you want to run the development code, clone this repository then run:
 
-    lein run
+    $ lein run
 
 You also need to create a `info.json` file which must be in the directory where you run the Java command.
 
@@ -44,7 +44,7 @@ You also need to create a `info.json` file which must be in the directory where 
 
 To compile the application as a stand-alone application, run:
 
-    lein uberjar
+    $ lein uberjar
 
 The generated jars can be found in `./target`
 
