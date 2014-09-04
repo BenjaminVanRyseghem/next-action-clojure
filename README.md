@@ -19,7 +19,8 @@ Download from http://example.com/FIXME.
 
 ## Prerequisites
 
-You will need [Leiningen][1] 1.7.0 or above installed.
+You will need [Leiningen][1] 1.7.0 or above installed if you want to run the code in development mode.
+Otherwise, you only need a JRE to run the **jar** file.
 
 You will also need [Todoist][2] as well as your Todoist API token (can be found under Settings -> Account).
 
@@ -51,11 +52,12 @@ Note that an `info.json` file is needed along the `jar` file.
 The `info.json` file is structured like this: 
 
     {
-    	"api-token": "Todoist API token. The API token is accessible in Settings -> Account",
-    	"someday-label": "Label of your GTD `Someday` project",
-    	"list-prefix": "Prefix for your projects that should be considered as lists",
-    	"next-action-label": "Label name for your next action tasks. If it does not exists, it will be created",
-    	"parallel-postfix": "Postfix indicating a project should handle its tasks in parallel way"
+    	"api-token": "String - Todoist API token. The API token is accessible in Settings -> Account",
+    	"someday-label": "String - Label of your GTD `Someday` project",
+    	"list-prefix": "String - Prefix for your projects that should be considered as lists",
+    	"next-action-label": "String - Label name for your next action tasks. If it does not exists, it will be created",
+    	"parallel-postfix": "String - Postfix indicating a project should handle its tasks in parallel way",
+    	"sleeping-time": Int - Time between to iterations 
     }
 
 ## Credits
