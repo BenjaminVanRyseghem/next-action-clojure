@@ -1,4 +1,4 @@
-(defproject next-action "0.1.0-SNAPSHOT"
+(defproject next-action "1.0.0"
   :description "FIXME: write description"
   :url "https://github.com/BenjaminVanRyseghem/next-action-clojure"
   :license {:name "General Public License v3.0"
