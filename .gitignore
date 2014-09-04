@@ -1,3 +1,4 @@
 info.json
 target/*
+!target/uberjar/*.jar
 !target/*.jar

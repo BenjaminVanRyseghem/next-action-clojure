@@ -22,3 +22,6 @@
 
 (defn parallel-postfix []
   (:parallel-postfix (read-info)))
+
+(defn sleeping-time []
+  (:sleeping-time (read-info)))

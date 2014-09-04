@@ -4,7 +4,7 @@
   (:gen-class))
 
 ;; Run every minute
-(def sleeping-time (* 1000 10 1 ))
+(def sleeping-time (* 1000 (info/sleeping-time) ))
 
 (defn- infinite-loop
   "Main loop run every `sleeping-time`"
