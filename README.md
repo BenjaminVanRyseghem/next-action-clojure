@@ -57,11 +57,11 @@ You can then run it using:
 The `info.json` file is structured like this: 
 
     {
-    	"api-token": "String - Todoist API token. The API token is accessible in Settings -> Account",
-    	"someday-label": "String - Label of your GTD `Someday` project",
-    	"list-prefix": "String - Prefix for your projects that should be considered as lists",
-    	"next-action-label": "String - Label name for your next action tasks. If it does not exists, it will be created",
-    	"parallel-postfix": "String - Postfix indicating a project should handle its tasks in parallel way",
+    	"api-token": String - Todoist API token. The API token is accessible in Settings -> Account,
+    	"someday-label": String - Label of your GTD `Someday` project,
+    	"list-prefix": String - Prefix for your projects that should be considered as lists,
+    	"next-action-label": String - Label name for your next action tasks. If it does not exists, it will be created,
+    	"parallel-postfix": String - Postfix indicating a project should handle its tasks in parallel way,
     	"sleeping-time": Int - Time between to iterations 
     }
 
