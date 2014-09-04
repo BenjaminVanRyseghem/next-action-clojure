@@ -1,6 +1,7 @@
 (ns next-action.core
   (:require [next-action.info :as info]
-            [next-action.sync :as sync]))
+            [next-action.sync :as sync])
+  (:gen-class))
 
 ;; Run every minute
 (def ^{:private true} sleeping-time (* 1000 (info/sleeping-time) ))
