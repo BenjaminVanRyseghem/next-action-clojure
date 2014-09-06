@@ -67,10 +67,9 @@
   (if-not (empty? coll)
     (let [first-task (first coll)]
       (if-not (nil? first-task)
-        (add-patches-for-sequential-task! patches first-task)))
-    (doall
-     (for [task (rest coll)]
-       (remove-patches-for-sequential-task! patches task)))))
+        (add-patches-for-sequential-task! patches first-task))
+      (doseq [task (rest coll)]
+        (remove-patches-for-sequential-task! patches task)))))
 
 ;;
 ;; Parallel
@@ -108,9 +107,8 @@
   [projects]
   (let [patches (atom [])]
     (doseq [project projects]
-      (do
-        (cond
-         (ignored? project) (attach-ignored-patches! patches @(:tasks project))
-         (sequential-project? project) (attach-sequential-patches! patches (filter #(= 1 (:indent %1)) @(:tasks project)))
-         (parallel-project? project) (attach-parallel-patches! patches @(:tasks project)))))
+      (cond
+       (ignored? project) (attach-ignored-patches! patches @(:tasks project))
+       (sequential-project? project) (attach-sequential-patches! patches (filter #(= 1 (:indent %1)) @(:tasks project)))
+       (parallel-project? project) (attach-parallel-patches! patches @(:tasks project))))
     @patches))
