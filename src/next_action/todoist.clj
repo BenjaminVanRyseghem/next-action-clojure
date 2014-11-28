@@ -109,14 +109,13 @@
         result (atom {})
         last-project (atom nil)
         indent (atom 1)]
-    (doseq [project (rest sorted)]
-      (do
-        (cond
-         (= @indent (:indent project)) (sibling-project! project parent)
-         (= (inc @indent) (:indent project)) (children-project! project parent last-project indent)
-         (< (:indent project) @indent) (parent-project! project parent indent))
-        (reset! last-project project)
-        (swap! result assoc (:id project) project)))
+    (doseq [project sorted]
+      (cond
+       (= @indent (:indent project)) (sibling-project! project parent)
+       (= (inc @indent) (:indent project)) (children-project! project parent last-project indent)
+       (< (:indent project) @indent) (parent-project! project parent indent))
+      (reset! last-project project)
+      (swap! result assoc (:id project) project))
     @result))
 
 ;;
