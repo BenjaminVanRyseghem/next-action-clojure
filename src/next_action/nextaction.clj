@@ -52,7 +52,7 @@
     (add-new-patch! patches (remove-label-patch task)))
   (doall
    (for [child @(:children task)]
-     (remove-patches-for-sequential-task! patches task))))
+     (remove-patches-for-sequential-task! patches child))))
 
 (defn- add-patches-for-sequential-task! [patches task]
   (if (empty? @(:children task))
